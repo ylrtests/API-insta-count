@@ -12,6 +12,16 @@ class Fan extends Model
      * @var array
      */
     protected $fillable = [
-        'name', 'price', 'category_id', 'quantity', 'status'
+        'username'
     ];
+
+
+
+     /**
+     * The posts that have been liked by the fan.
+     */
+    public function posts()
+    {
+        return $this->belongsToMany('App\Post','fan_post');
+    }
 }
