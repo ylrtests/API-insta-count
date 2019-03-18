@@ -64,10 +64,39 @@ class PostController extends Controller
     * Añade los usuarios que hicieron like a un post existente.
     *
     */
-    public function addUsers(Request $request){
+    public function addUsersWhoLikedPost(Request $request){
 
-        $data = $request->all();        
-        return response()->json(['register' => $data[20],'temp'=> $data]);
+        set_time_limit(300);
+
+        $data = json_decode($request->getContent());
+
+        $id_insta = $data->id_insta;
+        $fansUsernames = $data->fansUsernames;
+
+        $post = Post::select('id')->where('id_insta',$id_insta)->first();
+        $fans = Fan::all('id','username');
+
+       
+
+        
+        foreach ($fansUsernames as $fanUsername){
+            
+            $fan = $fans->where('username', $fanUsername)->first();
+
+            if(!$fan){                
+                $fan = new Fan;
+                $fan->username = $fanUsername;
+                $fan->save();
+                //Fan::create(['username' => $fanUsername]);
+
+            }
+
+            $fan->posts()->sync([$post->id], false);     
+
+        }
+
+        
+        
     }
 
 }

@@ -21,5 +21,5 @@ Route::middleware('auth:api')->get('/user', function (Request $request) {
 Route::prefix('post')->group(function () {
     Route::get('/','PostController@index')->name('post.index');
     Route::post('add','PostController@add')->name('post.add');
-
+    Route::post('add/likes','PostController@addUsersWhoLikedPost')->name('post.add.likes');
 });

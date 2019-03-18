@@ -21,6 +21,6 @@ class Post extends Model
      */
     public function fans()
     {
-        return $this->belongsToMany('App\Fan','fan_post');
+        return $this->belongsToMany('App\Fan','fan_post')->withTimestamps();
     }
 }
