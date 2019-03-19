@@ -23,3 +23,10 @@ Route::prefix('post')->group(function () {
     Route::post('add','PostController@add')->name('post.add');
     Route::post('add/likes','PostController@addUsersWhoLikedPost')->name('post.add.likes');
 });
+
+
+Route::prefix('fan')->group(function () {
+    Route::get('/','FanController@index')->name('fan.index');
+    Route::post('add','FanController@add')->name('fan.add');
+    Route::post('add/list','FanController@addManyFansByList')->name('fan.add.list');
+});

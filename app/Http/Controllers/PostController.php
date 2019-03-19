@@ -14,7 +14,20 @@ class PostController extends Controller
     *   
     */
     public function index(){
-        $posts = Post::all();
+
+        $posts = Post::select('id','id_insta','date')
+        ->with('fans:fans.id,fans.username')
+        ->withCount('fans')
+        ->get();
+
+        foreach($posts as $post){
+            $post->fans->makeHidden('pivot');
+        }  
+        
+        // foreach($posts as $post){
+        //     $likes = count($post->fans);
+        //     $post['likes'] = $likes;
+        // }
 
         return response()->json([
             'success'=> true, 
@@ -34,6 +47,7 @@ class PostController extends Controller
             'id_insta' => 'required|unique:posts',
             'date' => 'required'
         ];
+
         $validator = Validator::make($data, $rules);
                 
         if($validator->fails()) {
@@ -55,7 +69,7 @@ class PostController extends Controller
 
         return response()->json([
             'success'=>'true',
-            'controller'=>'addPost',
+            'controller'=>'Post@add',
             'temp'=> $data
             ]);
     }
@@ -77,8 +91,6 @@ class PostController extends Controller
         $fans = Fan::all('id','username');
 
        
-
-        
         foreach ($fansUsernames as $fanUsername){
             
             $fan = $fans->where('username', $fanUsername)->first();
@@ -91,12 +103,21 @@ class PostController extends Controller
 
             }
 
+            //Mantiene la tabla pivot sincronizada
             $fan->posts()->sync([$post->id], false);     
 
         }
 
+        return response()->json([
+            'success'=>'true',
+            'controller'=>'Post@addUsersWhoLikedPost',
+            'temp'=> 'Se han añadido fans con éxito'
+            ]);
+
         
         
     }
+
+
 
 }
