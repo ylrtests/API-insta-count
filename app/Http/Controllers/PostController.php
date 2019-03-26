@@ -80,7 +80,7 @@ class PostController extends Controller
     */
     public function addUsersWhoLikedPost(Request $request){
 
-        set_time_limit(300);
+        set_time_limit(1000);
 
         $data = json_decode($request->getContent());
 
