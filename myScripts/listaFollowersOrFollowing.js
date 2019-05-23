@@ -2,7 +2,7 @@
  * 
  * 
  * 
- *  Obtener Lista de Fans que el usuario sigue
+ *  Obtener Lista de Fans que el usuario sigue o seguidores
  * 
  * 
  * 

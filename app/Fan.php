@@ -12,7 +12,7 @@ class Fan extends Model
      * @var array
      */
     protected $fillable = [
-        'username','status'
+        'username','status','postCount'
     ];
 
 

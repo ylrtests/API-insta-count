@@ -14,23 +14,24 @@ class FanController extends Controller
     *   
     */
     public function index(){
+        set_time_limit(2000);
 
-        $fans = Fan::select('id','username')
+        $fans = Fan::select('id','username','status')
         ->with('posts:posts.id,posts.id_insta')
         ->withCount('posts')
-        ->orderBy('posts_count', 'DESC')
+        ->orderBy('status','DESC')
+        ->orderBy('posts_count', 'ASC')
         ->orderBy('username','ASC')
         ->get();
 
         foreach($fans as $fan){
+
+            $fan->postCount = $fan->posts_count;
+            $fan->save();
+
             $fan->posts->makeHidden('pivot');
             $fan['url'] = "https://www.instagram.com/".$fan->username."/";
         }      
-        
-        // foreach($fans as $fan){
-        //     $totalLikes = count($fan->posts);
-        //     $fan['totalLikes'] = $totalLikes;
-        // }
 
         return response()->json([
             'success'=> true, 
@@ -236,4 +237,46 @@ class FanController extends Controller
             'followersUsers' => $followersUsers
             ]);
     }
+
+
+    /**
+     * Elimina fans de la base de datos con status = "none"
+     * de acuerdo al número de posts igual o menores al indicado.
+     * Ejemplo: Si postNumber = 3, eliminará todos los fans con status = "none"
+     * que hayan hecho like a tres o menos posts
+     */
+
+     public function deleteFansWithStatusNone(Request $request){
+
+        $postNumber = $request->postNumber;
+
+        $rules = [
+            'postNumber' => 'required|numeric'
+        ];
+
+        $validator = Validator::make($request->all(),$rules);
+
+        if($validator->fails()){
+            return response()->json([
+                'success' => false,
+                'error' => $validator->messages()
+            ]);
+        }
+
+        $fans = Fan::select('id','username','status','postCount')
+        ->where([
+            ['status','=','none'],
+            ['postCount', '<=' , $postNumber]
+        ])
+        ->orderBy('postCount', 'ASC')
+        ->delete();
+
+        return response()->json([
+            'success'=>'true',
+            'controller'=>'Fan@deleteFansWithStatusNone',
+            'mensaje'=> 'Se han eliminado con éxito',
+            'postNumber' => $postNumber
+            ]);
+
+     }
 }

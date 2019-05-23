@@ -30,4 +30,5 @@ Route::prefix('fan')->group(function () {
     Route::post('add','FanController@add')->name('fan.add');
     Route::post('add/list','FanController@addManyFansByList')->name('fan.add.list');
     Route::post('update','FanController@addFollowersAndFriends')->name('fan.update');
+    Route::post('delete','FanController@deleteFansWithStatusNone')->name('fan.delete');
 });

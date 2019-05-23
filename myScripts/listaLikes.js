@@ -1,23 +1,4 @@
 
-/**
- * 
- * Obtener Lista de Fans que le hicieron like a un post
- * BvF6u95lRqC
- */
-
-// var postId;
-// var w;
-
-// var postId = prompt('ID del post:', '');
-// 	openWindow();
-
-// function openWindow(){
-// 	w = window.open("https://www.instagram.com/p/" + postId, "_self");
-// 	setTimeout(function(){
-// 		console.log('genial chrome')
-// 	},5000);
-// }
-
 function openAnchor(){
 	document.getElementsByTagName('a')[3].click();
 }
@@ -26,7 +7,7 @@ var offset = 0;
 var tempOffset = 0;
 var flag = 0;
 
-openAnchor();
+//openAnchor();
 
 window.onscroll = function () {
 	var d = document.documentElement;
@@ -37,7 +18,7 @@ var intervalo = setInterval(function () {
 
 	if (offset == tempOffset) {
 		flag++;
-		if (flag >= 15) {
+		if (flag >= 30) {
 		//if (flag >= 30) { Cuando se requieran todos los usuarios
 			console.log("Ya obtuve todos los usuarios...")
 			clearInterval(intervalo);
