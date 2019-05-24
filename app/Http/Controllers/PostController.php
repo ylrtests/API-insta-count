@@ -24,11 +24,6 @@ class PostController extends Controller
             $post->fans->makeHidden('pivot');
         }  
         
-        // foreach($posts as $post){
-        //     $likes = count($post->fans);
-        //     $post['likes'] = $likes;
-        // }
-
         return response()->json([
             'success'=> true, 
             'posts'=> $posts

@@ -16,7 +16,31 @@ class FanController extends Controller
     public function index(){
         set_time_limit(2000);
 
-        $fans = Fan::select('id','username','status')
+        $fans = Fan::select('id','username','status','postCount')
+        ->orderBy('status','DESC')
+        ->orderBy('username','ASC')
+        ->get();
+
+        foreach($fans as $fan){
+            $fan['url'] = "https://www.instagram.com/".$fan->username."/";
+        }      
+
+        return response()->json([
+            'success'=> true, 
+            'fans'=> $fans
+            ]);
+    }
+
+
+    /**
+    *  Envia todos los fans de la base de datos, 
+    * con posts y datos adicionales.
+    *   
+    */
+    public function getInfoFansComplete(){
+        set_time_limit(2000);
+
+        $fans = Fan::select('id','username','status','postCount')
         ->with('posts:posts.id,posts.id_insta')
         ->withCount('posts')
         ->orderBy('status','DESC')
