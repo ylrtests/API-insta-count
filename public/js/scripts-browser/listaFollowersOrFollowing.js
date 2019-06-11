@@ -44,7 +44,6 @@ var usersList = [];
 
 for(i=0; i<nodos.length; i++){
 	var temp = nodos[i].children[0].children[0].children[1].children[0].innerText
-	console.log(temp);
 
 	//ignorar usuarios verificados.
 	if(!temp.includes('Verificado')){

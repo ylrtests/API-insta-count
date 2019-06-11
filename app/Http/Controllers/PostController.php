@@ -15,18 +15,41 @@ class PostController extends Controller
     */
     public function index(){
 
-        $posts = Post::select('id','id_insta','date')
-        ->with('fans:fans.id,fans.username')
+        $posts = Post::select('id','id_insta','date','updated_at')
+        // ->with('fans:fans.id,fans.username')
         ->withCount('fans')
+        ->orderBy('date','DESC')
         ->get();
 
-        foreach($posts as $post){
-            $post->fans->makeHidden('pivot');
-        }  
+        // foreach($posts as $post){
+        //     $post->fans->makeHidden('pivot');
+        // }  
         
         return response()->json([
             'success'=> true, 
             'posts'=> $posts
+            ]);
+    }
+
+    /**
+    *  Envia un posts en especifico
+    *   
+    */
+    public function getPostByInstagramId(Request $request, $id){
+
+        $post = Post::select('id','id_insta','date','updated_at')
+        ->with('fans:fans.id,fans.username')
+        ->withCount('fans')
+        ->where("id_insta","=",$id)
+        ->get();
+
+        foreach($post as $p){
+            $p->fans->makeHidden('pivot');
+        }  
+        
+        return response()->json([
+            'success'=> true, 
+            'post'=> $post[0]
             ]);
     }
 
@@ -82,37 +105,44 @@ class PostController extends Controller
         $id_insta = $data->id_insta;
         $fansUsernames = $data->fansUsernames;
 
-        $post = Post::select('id')->where('id_insta',$id_insta)->first();
-        $fans = Fan::all('id','username');
-
-       
-        foreach ($fansUsernames as $fanUsername){
-            
-            $fan = $fans->where('username', $fanUsername)->first();
-
-            if(!$fan){                
-                $fan = new Fan;
-                $fan->username = $fanUsername;
-                $fan->save();
-                //Fan::create(['username' => $fanUsername]);
-
+        try{
+            $post = Post::select('id')->where('id_insta',$id_insta)->first();
+            foreach ($fansUsernames as $fanUsername){
+                $fan = Fan::select('id','username')->where('username',$fanUsername)->first();
+    
+                if(!$fan){                
+                    $fan = new Fan;
+                    $fan->username = $fanUsername;
+                    $fan->save();
+                    //Fan::create(['username' => $fanUsername]);
+                }
+    
+                //Mantiene la tabla pivot sincronizada
+                $fan->posts()->sync([$post->id], false);     
+    
             }
+            //Actualizo tabla de posts
+            $post->touch();
 
-            //Mantiene la tabla pivot sincronizada
-            $fan->posts()->sync([$post->id], false);     
 
         }
+        catch(Exception $ex){
+            return response()->json([
+                'success'=> false, 
+                'message'=> $ex->getMessage()
+                ]);
+        }
+
 
         return response()->json([
             'success'=>'true',
             'controller'=>'Post@addUsersWhoLikedPost',
-            'temp'=> 'Se han añadido fans con éxito'
+            'message'=> 'Se han añadido fans con éxito'
             ]);
 
         
         
     }
-
 
 
 }

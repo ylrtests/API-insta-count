@@ -7,7 +7,7 @@ var offset = 0;
 var tempOffset = 0;
 var flag = 0;
 
-//openAnchor();
+openAnchor();
 
 window.onscroll = function () {
 	var d = document.documentElement;

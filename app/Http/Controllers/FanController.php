@@ -2,148 +2,174 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use Validator, Exception;
-use App\Post;
 use App\Fan;
+use App\Post;
+use Exception;
+use Illuminate\Http\Request;
+use Validator;
 
 class FanController extends Controller
 {
     /**
-    *  Envia todos los fans de la base de datos.
-    *   
-    */
-    public function index(){
+     *  Envia todos los fans de la base de datos.
+     *
+     */
+    public function index()
+    {
         set_time_limit(2000);
 
-        $fans = Fan::select('id','username','status','postCount')
-        ->orderBy('status','DESC')
-        ->orderBy('username','ASC')
-        ->get();
+        $fans = Fan::select('id', 'username', 'status')
+            ->orderBy('status', 'DESC')
+            ->withCount('posts')
+            ->orderBy('username', 'ASC')
+            ->get();
 
-        foreach($fans as $fan){
-            $fan['url'] = "https://www.instagram.com/".$fan->username."/";
-        }      
+        foreach ($fans as $fan) {
+            $fan['url'] = "https://www.instagram.com/" . $fan->username . "/";
+        }
 
         return response()->json([
-            'success'=> true, 
-            'fans'=> $fans
-            ]);
+            'success' => true,
+            'fans' => $fans,
+        ]);
     }
 
+    /**
+     *  Envia los posts que el usuario en especifico le ha hecho like
+     */
+
+    public function getPostThatUserIdHasLiked(Request $request)
+    {
+        try {
+            $fan = Fan::select('id', 'username',  'status')
+                ->where('id', $request->input('user'))
+                ->first();
+
+            $sortedPosts = $fan->posts->sortByDesc('date');
+
+        } catch (Exception $ex) {
+            return response()->json([
+                'success' => false,
+                'message' => $ex->getMessage(),
+            ]);
+        }
+
+        
+        return response()->json([
+            "success" => true,
+            "fan" => $fan,
+            "posts" => $sortedPosts->values()->all()
+        ]);
+    }
 
     /**
-    *  Envia todos los fans de la base de datos, 
-    * con posts y datos adicionales.
-    *   
-    */
-    public function getInfoFansComplete(){
+     *  Envia todos los fans de la base de datos,
+     * con posts y datos adicionales.
+     *
+     */
+    public function getInfoFansComplete()
+    {
         set_time_limit(2000);
 
-        $fans = Fan::select('id','username','status','postCount')
-        ->with('posts:posts.id,posts.id_insta')
-        ->withCount('posts')
-        ->orderBy('status','DESC')
-        ->orderBy('posts_count', 'ASC')
-        ->orderBy('username','ASC')
-        ->get();
+        $fans = Fan::select('id', 'username', 'status')
+            ->with('posts:posts.id,posts.id_insta')
+            ->withCount('posts')
+            ->orderBy('status', 'DESC')
+            ->orderBy('posts_count', 'ASC')
+            ->orderBy('username', 'ASC')
+            ->get();
 
-        foreach($fans as $fan){
-
-            $fan->postCount = $fan->posts_count;
-            $fan->save();
+        foreach ($fans as $fan) {
 
             $fan->posts->makeHidden('pivot');
-            $fan['url'] = "https://www.instagram.com/".$fan->username."/";
-        }      
+            $fan['url'] = "https://www.instagram.com/" . $fan->username . "/";
+        }
 
         return response()->json([
-            'success'=> true, 
-            'fans'=> $fans
-            ]);
+            'success' => true,
+            'fans' => $fans,
+        ]);
     }
 
     /**
-    *  Añade un fan a la base de datos.
-    *   
-    */
+     *  Añade un fan a la base de datos.
+     *
+     */
 
-    public function add(Request $request){
+    public function add(Request $request)
+    {
 
         $data = $request->only(['username']);
 
-        
         $rules = [
-            'username' => 'required|unique:fans'
+            'username' => 'required|unique:fans',
         ];
 
         $validator = Validator::make($data, $rules);
-                
-        if($validator->fails()) {
+
+        if ($validator->fails()) {
             return response()->json([
-                'success'=> false, 
-                'error'=> $validator->messages()
-                ]);
+                'success' => false,
+                'error' => $validator->messages(),
+            ]);
         }
-        
-        try{
+
+        try {
             Fan::create($data);
-        }
-        catch(Exception $ex){
+        } catch (Exception $ex) {
             return response()->json([
-                'success'=> false, 
-                'error'=> $ex->getMessage()
-                ]);
+                'success' => false,
+                'error' => $ex->getMessage(),
+            ]);
         }
 
         return response()->json([
-            'success'=>'true',
-            'controller'=>'Fan@add',
-            'temp'=> $data
-            ]);
+            'success' => 'true',
+            'controller' => 'Fan@add',
+            'temp' => $data,
+        ]);
     }
 
-
     /**
-    *  Añade una lista de JSON de Fans a la base de datos.
-    *   
-    */
+     *  Añade una lista de JSON de Fans a la base de datos.
+     *
+     */
 
-    public function addManyFansByList(Request $request){
+    public function addManyFansByList(Request $request)
+    {
 
         set_time_limit(1000);
 
         $data = json_decode($request->getContent());
         $fansUsernames = $data->fansUsernames;
 
-         
-        foreach ($fansUsernames as $fanUsername){
-            
+        foreach ($fansUsernames as $fanUsername) {
+
             $fan = Fan::where('username', $fanUsername)->first();
 
-            if(!$fan){                
+            if (!$fan) {
                 $fan = new Fan;
                 $fan->username = $fanUsername;
                 $fan->save();
-            }   
+            }
 
         }
 
         return response()->json([
-            'success'=>'true',
-            'controller'=>'Fan@addManyFansByList',
-            'temp'=> 'Se han añadido lista de fans con éxito'
-            ]);
+            'success' => 'true',
+            'controller' => 'Fan@addManyFansByList',
+            'temp' => 'Se han añadido lista de fans con éxito',
+        ]);
     }
 
-
     /**
-    *  Añade y actualiza lista de Followers y personas que sigo
-    *  a la base de datos
-    *   
-    */
+     *  Añade y actualiza lista de Followers y personas que sigo
+     *  a la base de datos
+     *
+     */
 
-    public function addFollowersAndFriends(Request $request){
+    public function addFollowersAndFriends(Request $request)
+    {
 
         set_time_limit(2000);
 
@@ -152,33 +178,31 @@ class FanController extends Controller
         $followersUsers = $data->followers;
         $fans = Fan::all();
 
-        foreach ($fans as $fan){
+        foreach ($fans as $fan) {
 
             $value = $fan->username;
-            $valueFollower = array_search($value,$followersUsers);
+            $valueFollower = array_search($value, $followersUsers);
             $valueFollowing = array_search($value, $followingUsers);
 
             $valueFollower++;
             $valueFollowing++;
 
-            if($valueFollower){
+            if ($valueFollower) {
 
-                if($valueFollowing){
+                if ($valueFollowing) {
 
-                    if($fan->status != 'both') {
+                    if ($fan->status != 'both') {
                         $fan->status = 'both';
                         $fan->save();
                     }
-                    
+
                     $valueFollower--;
                     $valueFollowing--;
                     unset($followersUsers[$valueFollower]);
                     unset($followingUsers[$valueFollowing]);
-                }
+                } else {
 
-                else{
-
-                    if($fan->status != 'follower') {
+                    if ($fan->status != 'follower') {
                         $fan->status = 'follower';
                         $fan->save();
                     }
@@ -188,11 +212,9 @@ class FanController extends Controller
                     unset($followersUsers[$valueFollower]);
                 }
 
-            }
+            } else if ($valueFollowing) {
 
-            else if($valueFollowing ){
-
-                if($fan->status != 'following') {
+                if ($fan->status != 'following') {
                     $fan->status = 'following';
                     $fan->save();
                 }
@@ -200,11 +222,9 @@ class FanController extends Controller
                 $valueFollower--;
                 $valueFollowing--;
                 unset($followingUsers[$valueFollowing]);
-            }
+            } else {
 
-            else{
-
-                if($fan->status != 'none') {
+                if ($fan->status != 'none') {
                     $fan->status = 'none';
                     $fan->save();
                 }
@@ -212,95 +232,96 @@ class FanController extends Controller
 
         }
 
-        
-        foreach ($followersUsers as $index => $followersUser){
+        foreach ($followersUsers as $index => $followersUser) {
 
-                $fan = new Fan;
-                $fan->username = $followersUser;
+            $fan = new Fan;
+            $fan->username = $followersUser;
 
-                $valueFollowing = array_search($followersUser, $followingUsers);
-                $valueFollowing++;
+            $valueFollowing = array_search($followersUser, $followingUsers);
+            $valueFollowing++;
 
-          
-            if($valueFollowing){  
+            if ($valueFollowing) {
 
                 $fan->status = 'both';
                 $fan->save();
-                
+
                 $valueFollowing--;
                 unset($followersUsers[$index]);
                 unset($followingUsers[$valueFollowing]);
 
-            }
-            else{
+            } else {
 
                 $fan->status = 'follower';
                 $fan->save();
 
                 unset($followersUsers[$index]);
 
-            }  
+            }
 
         }
 
-        foreach ($followingUsers as $index => $followingUser){
+        foreach ($followingUsers as $index => $followingUser) {
 
             $fan = new Fan;
             $fan->username = $followingUser;
             $fan->status = 'following';
             $fan->save();
-      
+
             unset($followingUsers[$index]);
-            
+
         }
 
-         return response()->json([
-            'success'=>'true',
-            'controller'=>'Fan@addFollowersAndFriends',
-            'followingUsers'=> $followingUsers,
-            'followersUsers' => $followersUsers
-            ]);
+        return response()->json([
+            'success' => 'true',
+            'controller' => 'Fan@addFollowersAndFriends',
+            'followingUsers' => $followingUsers,
+            'followersUsers' => $followersUsers,
+        ]);
     }
-
 
     /**
      * Elimina fans de la base de datos con status = "none"
      * de acuerdo al número de posts igual o menores al indicado.
      * Ejemplo: Si postNumber = 3, eliminará todos los fans con status = "none"
      * que hayan hecho like a tres o menos posts
+     *
+     *
+     *
+     * ============== Se elimino Post Count
      */
 
-     public function deleteFansWithStatusNone(Request $request){
+    public function deleteFansWithStatusNone(Request $request)
+    {
 
         $postNumber = $request->postNumber;
 
         $rules = [
-            'postNumber' => 'required|numeric'
+            'postNumber' => 'required|numeric',
         ];
 
-        $validator = Validator::make($request->all(),$rules);
+        $validator = Validator::make($request->all(), $rules);
 
-        if($validator->fails()){
+        if ($validator->fails()) {
             return response()->json([
                 'success' => false,
-                'error' => $validator->messages()
+                'error' => $validator->messages(),
             ]);
         }
 
-        $fans = Fan::select('id','username','status','postCount')
-        ->where([
-            ['status','=','none'],
-            ['postCount', '<=' , $postNumber]
-        ])
-        ->orderBy('postCount', 'ASC')
-        ->delete();
+        $fans = Fan::select('id', 'username', 'status', 'postCount')
+            ->where([
+                ['status', '=', 'none'],
+                ['postCount', '<=', $postNumber],
+            ])
+            ->orderBy('postCount', 'ASC')
+            ->delete();
 
         return response()->json([
-            'success'=>'true',
-            'controller'=>'Fan@deleteFansWithStatusNone',
-            'mensaje'=> 'Se han eliminado con éxito',
-            'postNumber' => $postNumber
-            ]);
+            'success' => 'true',
+            'controller' => 'Fan@deleteFansWithStatusNone',
+            'mensaje' => 'Se han eliminado con éxito',
+            'postNumber' => $postNumber,
+        ]);
 
-     }
+    }
 }

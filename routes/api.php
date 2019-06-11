@@ -18,6 +18,8 @@ Route::middleware('auth:api')->get('/user', function (Request $request) {
 */
 
 Route::post('login', 'AuthController@login');
+Route::get('fan/posts', 'FanController@getPostThatUserIdHasLiked');
+
 
 Route::group(['middleware' => ['jwt.auth']], function () {
     
@@ -26,8 +28,10 @@ Route::group(['middleware' => ['jwt.auth']], function () {
 
     Route::prefix('post')->group(function () {
         Route::get('/','PostController@index')->name('post.index');
+        Route::get('/{id}','PostController@getPostByInstagramId')->name('post.getPostByInstagramId');
         Route::post('add','PostController@add')->name('post.add');
         Route::post('add/likes','PostController@addUsersWhoLikedPost')->name('post.add.likes');
+        
     });
     
     
